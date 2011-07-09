@@ -1,17 +1,17 @@
 package org.grails.plugins.routing
 
-import org.apache.camel.builder.RouteBuilder
+import org.apache.camel.spring.SpringRouteBuilder
 
-public class GrailsRouteBuilder extends RouteBuilder {
+public class GrailsRouteBuilder extends SpringRouteBuilder {
 
-    def configuration
+	def configuration
 
-    public GrailsRouteBuilder(Closure configuration) {
-        this.configuration = configuration
-    }
+	public GrailsRouteBuilder(Closure configuration) {
+		this.configuration = configuration
+	}
 
-    public void configure() {
-        configuration.delegate = this
-        configuration()
-    }
+	public void configure() {
+		configuration.delegate = this
+		configuration()
+	}
 }
