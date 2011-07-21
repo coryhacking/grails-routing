@@ -12,7 +12,7 @@ class RoutingGrailsPlugin {
 
 	static final log = Logger.getLogger('org.grails.plugins.routing.RoutingGrailsPlugin')
 
-	def version = "1.1.2"
+	def version = "1.1.3"
 	def grailsVersion = "1.3.6 > *"
 	def dependsOn = [:]
 	def pluginExcludes = []
@@ -84,6 +84,20 @@ added with the 'grails create-route route-name' command.
 			def grailsClass = application."${artifactType}Classes".find { it.fullName == artifactName }
 			this.addMethods([grailsClass], event.ctx)
 		}
+
+		log.debug "Reloading bean endpoints of class ${event.source.name}..."
+		event.ctx.beanDefinitionNames.each { bean ->
+			if (event.ctx.getType(bean)?.simpleName == event.source.name) {
+				// endpoints with bean are to be restarted
+				event.ctx.camelContext.endpoints.each { endpoint ->
+					if (endpoint instanceof org.apache.camel.component.bean.BeanEndpoint && endpoint.beanName == bean) {
+						endpoint.beanHolder = null
+						endpoint.processor = null
+						endpoint.cache = false
+					}
+				}
+			}
+		}
 	}
 
 	def onConfigChange = { event ->
@@ -134,6 +148,9 @@ added with the 'grails create-route route-name' command.
 		artifacts?.each { artifact ->
 			artifact.metaClass.sendMessage = { endpoint, message ->
 				template.sendBody(endpoint, message)
+			}
+			artifact.metaClass.sendMessageAndHeaders = { endpoint, message, headers ->
+				template.sendBodyAndHeaders(endpoint, message, headers)
 			}
 			artifact.metaClass.requestMessage = { endpoint, message ->
 				template.requestBody(endpoint, message)
